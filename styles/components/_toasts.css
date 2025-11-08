@@ -1,0 +1,92 @@
+/* --- LIVE TOAST NOTIFICATIONS --- */
+.live-toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.live-toast {
+    background-color: var(--surface-color);
+    border-left: 4px solid var(--border-color);
+    color: var(--primary-text-color);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 280px;
+    max-width: 350px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s ease-out;
+    opacity: 0.95;
+    border-radius: 4px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 0.95;
+    }
+}
+
+.live-toast.success {
+    border-left-color: var(--success-color);
+}
+.live-toast.failure {
+    border-left-color: var(--error-color);
+}
+.live-toast.info {
+    border-left-color: var(--accent-color);
+}
+
+.live-toast-icon {
+    font-size: 1.5rem;
+}
+
+.live-toast-content {
+    flex-grow: 1;
+}
+
+.live-toast-title {
+    font-weight: bold;
+}
+.live-toast-message {
+    font-size: 0.9rem;
+    color: var(--secondary-text-color);
+    margin: 0;
+}
+
+.live-toast-close {
+    background: none;
+    border: none;
+    color: var(--secondary-text-color);
+    font-size: 1.5rem;
+    padding: 0;
+    line-height: 1;
+}
+
+.live-toast-close:hover {
+    color: var(--primary-text-color);
+    filter: none;
+}
+
+/* --- NOTIFICATION LOG WIDGET --- */
+.notification-log {
+    background: var(--surface-color);
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+}
+.log-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+.log-item { background: var(--background-color); border-left: 3px solid var(--character-color, var(--accent-color)); padding: 0.75rem; font-size: 0.9rem; }
+.log-item-header { display: flex; align-items: center; gap: 0.5rem; }
+.log-item-title { flex-grow: 1; }
+.log-item-details { background: #111; padding: 0.5rem; margin-top: 0.5rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.log-item-details.expanded { max-height: 200px; }

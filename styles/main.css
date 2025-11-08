@@ -1,0 +1,32 @@
+/* /styles/main.css */
+
+/* 1. Importa as variáveis primeiro, pois tudo depende delas */
+@import url('./sheets/_variables.css');
+
+/* 2. Importa os estilos de layout da página */
+@import url('./layout/_grid.css');
+@import url('./layout/_header.css');
+
+/* 3. Importa os estilos de componentes reutilizáveis */
+@import url('./components/_buttons.css');
+@import url('./components/_inputs.css');
+@import url('./components/_modals.css');
+@import url('./components/_tabs.css');
+@import url('./components/_toasts.css');
+
+/* 4. Importa os estilos específicos da ficha por último */
+@import url('./sheets/_character-sheet.css');
+
+/* Reset básico e estilos do body */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--primary-text-color);
+    font-family: var(--font-body);
+    line-height: 1.6;
+}

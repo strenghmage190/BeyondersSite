@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beyonders</title>
+    
+    <!-- O Importmap vem primeiro, dentro do <head>, para configurar os módulos -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+      }
+    }
+    </script>
+
+    <!-- O CSS também vai no <head> -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- Este é o elemento onde o seu aplicativo React será renderizado -->
+    <div id="root"></div>
+
+    <!-- O script principal do seu aplicativo é carregado no final do <body> -->
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

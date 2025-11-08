@@ -1,0 +1,339 @@
+/* --- BOTÕES GLOBAIS --- */
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: linear-gradient(45deg, var(--character-color-dark, #7b1fa2), var(--character-color, var(--accent-color)));
+    color: var(--character-contrast-color, white);
+    padding: 0.5rem 1rem;
+    transition: filter 0.2s ease-in-out;
+}
+button:hover {
+    filter: brightness(1.1);
+}
+button:disabled {
+    background: #555;
+    border-color: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
+    filter: none;
+}
+
+/* --- BOTÕES ESPECÍFICOS --- */
+.app-header nav button {
+    background: none;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.app-header nav button:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.auth-submit-btn {
+    padding: 0.8rem;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 1rem;
+    background: linear-gradient(45deg, var(--accent-color-dark), var(--accent-color));
+    color: white;
+}
+
+.auth-toggle-btn {
+    background: none;
+    color: var(--accent-color);
+    border: none;
+    margin-top: 1.5rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0.5rem;
+}
+
+.logout-btn {
+    background: transparent;
+    border-color: var(--secondary-text-color);
+    color: var(--secondary-text-color);
+}
+.logout-btn:hover {
+    background: var(--secondary-text-color);
+    color: var(--surface-color);
+}
+
+.add-agent-btn {
+    background: linear-gradient(45deg, var(--accent-color-dark), var(--accent-color));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.access-sheet-btn {
+    background-color: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.settings-btn, .delete-btn-popup {
+    background: none;
+    border: 1px solid var(--secondary-text-color);
+    color: var(--secondary-text-color);
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.delete-btn-popup {
+    background-color: var(--error-color);
+    color: white;
+    border: none;
+    width: 100%;
+}
+
+.back-to-list-btn, .customize-btn, .dice-roller-modal-btn {
+    background: none;
+    border: 1px solid var(--secondary-text-color);
+    color: var(--secondary-text-color);
+    padding: 0.5rem 1rem;
+}
+
+.customize-btn, .dice-roller-modal-btn {
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customize-btn svg, .dice-roller-modal-btn svg {
+    width: 20px;
+    height: 20px;
+}
+.dice-roller-modal-btn:hover {
+    filter: none;
+    background-color: var(--border-color);
+    color: var(--primary-text-color);
+}
+.customize-btn {
+    border-color: var(--character-color, var(--secondary-text-color));
+    color: var(--character-color, var(--secondary-text-color));
+}
+
+.spend-pa-btn { width: 100%; padding: 0.75rem; }
+
+.adjustable-pa button {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.purify-btn {
+    width: 100%;
+    padding: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--character-color, var(--accent-color));
+    color: var(--character-color, var(--accent-color));
+}
+.purify-btn:hover {
+    background: var(--character-color, var(--accent-color));
+    color: var(--character-contrast-color, white);
+}
+.purify-btn:disabled {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--secondary-text-color);
+    cursor: not-allowed;
+}
+
+.dice-roller-modal-btn-inline {
+    background: none;
+    border: 1px solid var(--secondary-text-color);
+    color: var(--secondary-text-color);
+    padding: 0.5rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+.dice-roller-modal-btn-inline:hover {
+    filter: none;
+    background-color: var(--border-color);
+    color: var(--primary-text-color);
+}
+.dice-roller-modal-btn-inline svg {
+    width: 20px;
+    height: 20px;
+}
+
+.skill-roll-btn {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--secondary-text-color);
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+.skill-roll-btn svg { width: 20px; height: 20px; }
+.skill-roll-btn:hover {
+    filter: none;
+    background-color: var(--border-color);
+    color: var(--primary-text-color);
+}
+.will-roll-form .roll-btn { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; }
+
+#control-test-btn {
+    width: 100%;
+}
+
+.invoke-anchor-btn { width: 100%; background: transparent; border: 1px solid var(--character-color, var(--accent-color)); color: var(--character-color, var(--accent-color)); }
+.invoke-anchor-btn:hover { background: var(--character-color, var(--accent-color)); color: var(--character-contrast-color, white); }
+.invoke-anchor-btn:disabled { background: transparent; border-color: var(--border-color); color: var(--secondary-text-color); cursor: not-allowed; }
+
+.log-item-close-btn { background: none; color: var(--secondary-text-color); }
+.log-item-toggle { background: none; text-decoration: underline; color: var(--secondary-text-color); padding: 0; margin-top: 0.5rem; font-size: 0.8rem; }
+
+.tab-header button { padding: 0.5rem 1rem; }
+.item-header-controls button { background: none; border: none; color: var(--secondary-text-color); font-size: 1.5rem; cursor: pointer; }
+
+.roll-attack-btn { width: 100%; padding: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.ammo-controls button { padding: 0.2rem 0.5rem; }
+.money-controls button { flex-shrink: 0; }
+.money-controls button:last-of-type {
+    background: transparent;
+    border: 1px solid var(--secondary-text-color);
+    color: var(--secondary-text-color);
+}
+
+.beyonder-filter-bar .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--secondary-text-color);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    opacity: 0.8;
+}
+.beyonder-filter-bar .filter-btn:hover {
+    background: var(--border-color);
+    color: var(--primary-text-color);
+    filter: none;
+    opacity: 1;
+}
+.beyonder-filter-bar .filter-btn.active {
+    background-color: var(--character-color, var(--accent-color));
+    border-color: var(--character-color, var(--accent-color));
+    color: var(--character-contrast-color, white);
+    opacity: 1;
+}
+
+#mythical-form-trigger-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 2px solid var(--character-color, var(--accent-color));
+    color: var(--character-color, var(--accent-color));
+    box-shadow: 0 0 10px rgba(var(--character-color-rgb, 156, 39, 176), 0.5);
+    transition: all 0.2s ease-in-out;
+}
+#mythical-form-trigger-btn:hover {
+    background: var(--character-color, var(--accent-color));
+    color: var(--character-contrast-color, white);
+    transform: scale(1.1);
+    filter: none;
+}
+.mythical-form-banner-actions button {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+.mythical-form-banner-actions .deactivate-btn {
+    background: linear-gradient(45deg, #a13c4f, #cf6679);
+    border: 1px solid #a13c4f;
+}
+.mythical-form-banner-actions .deactivate-btn:hover {
+     filter: brightness(1.2);
+}
+
+.close-modal-btn { background: none; border: none; color: var(--primary-text-color); font-size: 2rem; cursor: pointer; }
+
+.improvement-modal-tabs button {
+    background: none;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+.improvement-modal-tabs button.active {
+    color: var(--character-color, var(--accent-color));
+    border-bottom-color: var(--character-color, var(--accent-color));
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+}
+
+.improvement-item-controls .stepper-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 1.2rem;
+    background: #333;
+    border: 1px solid #444;
+    color: var(--primary-text-color);
+}
+.buy-ability-btn {
+    padding: 0.5rem 1rem;
+    width: auto;
+    height: auto;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, border-color 0.2s;
+    white-space: nowrap; 
+}
+.buy-ability-btn.purchased {
+    background: #424242;
+    border-color: #424242;
+    color: var(--secondary-text-color);
+}
+.buy-ability-btn.selected {
+    background: linear-gradient(45deg, #a73c4f, var(--error-color));
+    border: none;
+    color: white;
+}
+
+.advancement-section button {
+    margin-top: 1rem;
+    background: linear-gradient(45deg, #388e3c, var(--success-color));
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+.upload-btn { padding: 0.5rem; }
+
+.mechanic-counter button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 1.2rem;
+    background: #333;
+    border: 1px solid #444;
+    color: var(--primary-text-color);
+}
+
+.particle-item button { color: var(--error-color); }

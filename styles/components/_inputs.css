@@ -1,0 +1,72 @@
+/* --- INPUTS GLOBAIS --- */
+input, select, textarea {
+    background-color: var(--background-color);
+    color: var(--primary-text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    font-family: inherit;
+    width: 100%;
+}
+textarea { width: 100%; min-height: 80px; resize: vertical; }
+
+/* --- INPUTS ESPECÍFICOS --- */
+.form-group { display: flex; flex-direction: column; }
+.form-group label { font-size: 0.8rem; color: var(--secondary-text-color); margin-bottom: 0.25rem; }
+.auth-form .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.char-info-main input { width: 100%; text-align: center; font-size: 1.5rem; font-family: var(--font-title); }
+.pathway-select { width: 100%; }
+.char-info-sub input { width: 50%; }
+
+.status-input { width: 50px; text-align: center; }
+
+.attribute-row input { width: 50px; }
+
+.pa-box-value input {font-size: 1.5rem; font-weight: bold; text-align: center;}
+.pa-box-value.adjustable-pa .pa-input {
+    width: 60px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: var(--primary-text-color);
+    font-family: inherit;
+    -moz-appearance: textfield; /* Firefox */
+}
+.pa-box-value.adjustable-pa .pa-input::-webkit-outer-spin-button,
+.pa-box-value.adjustable-pa .pa-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.pericia-item-v2 input { width: 50px; text-align: center; }
+.item-header-title input { font-size: 1.1rem; font-weight: bold; }
+
+.stat-box input { width: 100%; font-size: 1.5rem; text-align: center; }
+
+.money-controls input {
+    flex-grow: 1;
+    max-width: 150px;
+}
+
+.stage-option input[type="radio"] {
+    width: auto;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+}
+.toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background: linear-gradient(45deg, var(--character-color-dark, #7b1fa2), var(--character-color, var(--accent-color))); }
+input:checked + .slider:before { transform: translateX(26px); }
+
+.mechanic-counter input {
+    width: 60px;
+    text-align: center;
+}
+.attack-grid label { font-size: 0.8rem; color: var(--secondary-text-color); }

@@ -1,0 +1,23 @@
+/* --- FONTES GLOBAIS --- */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Open+Sans:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Dyslexic&display=swap');
+
+/* --- VARIÁVEIS GLOBAIS E RESET --- */
+:root {
+    --background-color: #121212;
+    --surface-color: #1e1e1e;
+    --primary-text-color: #e0e0e0;
+    --secondary-text-color: #a0a0a0;
+    --border-color: #333;
+    --accent-color: #9c27b0;
+    --accent-color-dark: #7b1fa2;
+    --error-color: #cf6679;
+    --success-color: #66bb6a;
+    --font-title: 'Cinzel', serif;
+    --font-body: 'Open Sans', sans-serif;
+}
+
+/* --- ESTILOS DE ACESSIBSIBILIDADE --- */
+.opendyslexic, .opendyslexic * {
+    font-family: 'OpenDyslexic', !important;
+}
