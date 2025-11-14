@@ -5,16 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beyonders</title>
     
-    <!-- O Importmap vem primeiro, dentro do <head>, para configurar os módulos -->
-    <script type="importmap">
-    {
-      "imports": {
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
-      }
-    }
-    </script>
+    <!-- Removed importmap to avoid loading React/Supabase packages from CDN which
+         can cause multiple React copies and Invalid Hook Call errors. Vite will
+         resolve dependencies from local node_modules. If you intentionally want
+         to use CDN modules, ensure all modules (including your React) come from
+         the same source. -->
 
     <!-- O CSS também vai no <head> -->
     <link rel="stylesheet" href="styles/main.css">

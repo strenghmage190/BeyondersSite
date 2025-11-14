@@ -287,3 +287,18 @@ export interface PathwayData {
     };
     sequences: Record<string, SequenceAbility[]>;
 }
+
+// Campaign type for campaigns / parties
+export interface CampaignPlayer {
+    userId: string;
+    agentId: string;
+}
+
+export interface Campaign {
+    id: string;
+    name: string;
+    description?: string;
+    gm_id: string;
+    invite_code?: string;
+    cover_image_url?: string | null;
+}

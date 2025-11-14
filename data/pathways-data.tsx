@@ -234,4 +234,8 @@ export const beyonderAbilities = [
                 { name: "Autopreservação Psíquica", desc: "Passivo. Você sente instintivamente quando alguém está tentando usar um poder em você, mesmo que não haja sinais visíveis." }
             ],
             "Sequência 7: Psiquiatra": [
-                { name: "Aplacar", desc: "Gaste 4 PE. Você pode acalmar uma
+                { name: "Aplacar", desc: "Gaste 4 PE. Você pode acalmar uma pessoa, reduzindo sua agitação ou medo por um curto período." }
+            ]
+        }
+    }
+];
