@@ -32,15 +32,21 @@
 
 
 /* --- AGENT LIST PAGE --- */
-.agent-list-container { max-width: 1200px; margin: 0 auto; }
-.agent-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.agent-list-header h2 { font-family: var(--font-title); }
+.agent-list-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #333;
+}
 .agent-card {
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    justify-content: space-between;
 }
 .agent-card-avatar {
     height: 150px;
@@ -52,7 +58,7 @@
 .agent-card-info h3 { font-family: var(--font-title); margin-bottom: 0.5rem; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); }
 .agent-card-info p { color: var(--secondary-text-color); font-size: 0.9rem; }
 .agent-card-date { font-size: 0.8rem; margin-top: 1rem; opacity: 0.7; }
-.agent-card-actions { display: flex; justify-content: space-between; padding: 0 1rem 1rem; align-items: center; }
+.agent-card-actions { display: flex; justify-content: space-between; margin-top: 1rem; align-items: center; }
 .settings-wrapper { position: relative; }
 .delete-btn-popup { position: absolute; bottom: 100%; left: 0; margin-bottom: 5px; }
 

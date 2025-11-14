@@ -6,6 +6,8 @@
     padding: 1rem 2rem;
     background-color: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+    z-index: 100;
 }
 
 .app-header .title-font {
@@ -17,4 +19,30 @@
 .app-header nav {
     display: flex;
     gap: 1rem;
+}
+
+.app-header nav a {
+    color: var(--primary-text-color);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.app-header nav a:hover {
+    background-color: var(--background-color);
+}
+
+.app-header nav button {
+    background: none;
+    border: none;
+    color: var(--primary-text-color);
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.app-header nav button:hover {
+    background-color: var(--background-color);
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface HeaderProps {
-    onShowAgents: () => void;
+    onShowAgents?: () => void;
     onShowCampaigns?: () => void;
     onLogout: () => void;
 }
@@ -12,7 +12,7 @@ export const Header: React.FC<HeaderProps> = ({ onShowAgents, onShowCampaigns, o
             <h1 className="title-font">Beyonders</h1>
             <nav>
                 <button onClick={onShowAgents}>Agentes</button>
-                <button onClick={() => onShowCampaigns && onShowCampaigns()}>Campanhas</button>
+                <button onClick={onShowCampaigns}>Campanhas</button>
                 <button onClick={onLogout} className="logout-btn">Sair</button>
             </nav>
         </header>

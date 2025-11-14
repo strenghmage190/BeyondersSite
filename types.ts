@@ -30,6 +30,8 @@ export interface CustomizationSettings {
     avatarInsane: string;
 }
 
+
+
 export interface Anchor {
     conviction: string;
     symbol: string;
@@ -117,6 +119,7 @@ export interface BeyonderAbility {
     cost?: number | null;
     seqName?: string | null;
     acquisitionMethod?: 'free' | 'purchased';
+    isDomain?: boolean;
 }
 
 export interface Ritual {

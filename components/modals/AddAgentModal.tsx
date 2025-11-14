@@ -6,7 +6,7 @@ import { AgentData } from '../../types';
 interface Props {
   campaignId: string;
   onClose: () => void;
-  onAgentAdded: (newLink: any) => void;
+  onAgentAdded: () => void;
 }
 
 const AddAgentModal: React.FC<Props> = ({ campaignId, onClose, onAgentAdded }) => {
@@ -41,9 +41,9 @@ const AddAgentModal: React.FC<Props> = ({ campaignId, onClose, onAgentAdded }) =
   const handleAddAgent = async () => {
     if (!selectedAgentId) return;
     try {
-      const newLink = await linkAgentToCampaign(campaignId, selectedAgentId);
-      alert('Agente adicionado com sucesso!');
-      onAgentAdded(newLink);
+      await linkAgentToCampaign(campaignId, selectedAgentId);
+      console.log("1. MODAL: Sucesso na API! Chamando onAgentAdded..."); // LOG 1
+      onAgentAdded(); // Garanta que não está passando nenhum parâmetro
     } catch (error) {
       alert('Erro ao adicionar o agente.');
     }
@@ -68,7 +68,7 @@ const AddAgentModal: React.FC<Props> = ({ campaignId, onClose, onAgentAdded }) =
                 onClick={() => setSelectedAgentId(agent.id.toString())}
               >
                 <img
-                  src={agent.character.avatarUrl || 'https://via.placeholder.com/60x60?text=NPC'}
+                  src={agent.character.avatarUrl || 'https://placehold.co/60x60?text=NPC'}
                   alt="Avatar do Agente"
                   className="agent-avatar"
                 />

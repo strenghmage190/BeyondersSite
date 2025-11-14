@@ -1,0 +1,59 @@
+/* CSS para a página e cards de campanha */
+
+.campaign-section {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.campaign-section h3 {
+  margin-bottom: 1rem;
+}
+
+.campaigns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.campaign-card {
+  background-color: #1c1c1c;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden; /* Garante que a imagem não vaze */
+  display: flex;
+  flex-direction: column;
+}
+
+.campaign-card-cover {
+  height: 150px;
+  background-color: #2a2135; /* Um roxo escuro de placeholder */
+}
+
+.campaign-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.campaign-card-content {
+  padding: 1rem;
+  flex-grow: 1; /* Faz esta área crescer para empurrar as ações para baixo */
+}
+
+.campaign-card-content h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.campaign-card-content p {
+  font-size: 0.9rem;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.campaign-card-actions {
+  padding: 1rem;
+  border-top: 1px solid #333;
+}
+
+.campaign-card-actions button {
+  width: 100%;
+}

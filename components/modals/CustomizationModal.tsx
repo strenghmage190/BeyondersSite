@@ -1,19 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AgentData, CustomizationSettings } from '../../types.ts';
+import { supabase } from '../../supabaseClient';
 
 interface CustomizationModalProps {
     isOpen: boolean;
     onClose: () => void;
     agent: AgentData;
-    onUpdate: (updatedAgent: AgentData) => void;
+    // A função de atualização agora pode receber um arquivo
+    onUpdateAgent: (updatedData: Partial<AgentData> | { field: string; file: File }) => void;
 }
 
 type AvatarField = 'avatarHealthy' | 'avatarHurt' | 'avatarDisturbed' | 'avatarInsane';
 
-export const CustomizationModal: React.FC<CustomizationModalProps> = ({ isOpen, onClose, agent, onUpdate }) => {
+export const CustomizationModal: React.FC<CustomizationModalProps> = ({ isOpen, onClose, agent, onUpdateAgent }) => {
     const [settings, setSettings] = useState<CustomizationSettings>(agent.customization);
     const [color, setColor] = useState(agent.character.pathwayColor);
+    const [previewUrls, setPreviewUrls] = useState<Record<AvatarField, string>>({
+        avatarHealthy: '',
+        avatarHurt: '',
+        avatarDisturbed: '',
+        avatarInsane: '',
+    });
 
+    // Criamos uma referência para cada input de arquivo
     const fileInputRefs = {
         avatarHealthy: useRef<HTMLInputElement>(null),
         avatarHurt: useRef<HTMLInputElement>(null),
@@ -21,10 +30,38 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({ isOpen, 
         avatarInsane: useRef<HTMLInputElement>(null),
     };
 
+    const getSignedUrl = async (url: string): Promise<string> => {
+        if (!url) return '';
+        try {
+            const { data } = await supabase.storage.from('agent-avatars').createSignedUrl(url, 3600); // 1 hour
+            return data?.signedUrl || '';
+        } catch (error) {
+            console.error('Error generating signed URL:', error);
+            return '';
+        }
+    };
+
     useEffect(() => {
         if (isOpen) {
             setSettings(agent.customization || { useOpenDyslexicFont: false, avatarHealthy: '', avatarHurt: '', avatarDisturbed: '', avatarInsane: '' });
             setColor(agent.character.pathwayColor);
+
+            // Generate signed URLs for existing avatars
+            const generatePreviews = async () => {
+                const newPreviews: Record<AvatarField, string> = {
+                    avatarHealthy: '',
+                    avatarHurt: '',
+                    avatarDisturbed: '',
+                    avatarInsane: '',
+                };
+                const fields: AvatarField[] = ['avatarHealthy', 'avatarHurt', 'avatarDisturbed', 'avatarInsane'];
+                for (const field of fields) {
+                    const url = agent.customization?.[field] || '';
+                    newPreviews[field] = await getSignedUrl(url);
+                }
+                setPreviewUrls(newPreviews);
+            };
+            generatePreviews();
         }
     }, [isOpen, agent]);
 
@@ -32,46 +69,58 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({ isOpen, 
         setSettings(prev => ({ ...prev, [field]: value }));
     };
 
+    // Esta função agora lida com o upload de arquivos
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: AvatarField) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (loadEvent) => {
-                if (loadEvent.target?.result) {
-                    handleSettingChange(field, loadEvent.target.result as string);
-                }
-            };
-            reader.readAsDataURL(file);
+            // Set preview URL for immediate feedback
+            const objectUrl = URL.createObjectURL(file);
+            setPreviewUrls(prev => ({ ...prev, [field]: objectUrl }));
+
+            // Passa o arquivo para a CharacterSheetPage, que sabe como fazer o upload.
+            // A CharacterSheetPage vai lidar com o upload e depois atualizar a URL.
+            onUpdateAgent({ field, file });
+            // Keep modal open for user to save changes
         }
     };
 
     const handleSave = () => {
-        const updatedAgent = {
-            ...agent,
-            customization: settings,
-            character: {
-                ...agent.character,
-                pathwayColor: color,
-            },
-        };
-        onUpdate(updatedAgent);
+        // Clean up object URLs to prevent memory leaks
+        Object.values(previewUrls).forEach(url => {
+            if (url && typeof url === 'string' && url.startsWith('blob:')) {
+                URL.revokeObjectURL(url);
+            }
+        });
+        onUpdateAgent({ customization: settings, character: { ...agent.character, pathwayColor: color } });
         onClose();
     };
 
     if (!isOpen) return null;
 
+    // Função para renderizar a seção de upload de avatar
     const renderAvatarInput = (field: AvatarField, label: string) => (
-        <div className="avatar-input-row">
+        <div className="avatar-upload-section">
             <label>{label}</label>
-            <input type="text" placeholder="URL ou carregue um arquivo..." value={settings[field] || ''} onChange={e => handleSettingChange(field, e.target.value)} />
-            <input 
-                type="file" 
-                ref={fileInputRefs[field]} 
-                style={{ display: 'none' }} 
-                accept="image/*" 
-                onChange={(e) => handleFileChange(e, field)} 
-            />
-            <button type="button" className="upload-btn" onClick={() => fileInputRefs[field].current?.click()}>Carregar</button>
+            <div className="avatar-preview-container">
+                <div
+                    className="avatar-preview"
+                    style={{ backgroundImage: `url(${previewUrls[field] || ''})` }}
+                    onClick={() => fileInputRefs[field].current?.click()}
+                    title="Clique para alterar"
+                >
+                    {!previewUrls[field] && <span>Sem Imagem</span>}
+                </div>
+                <div className="avatar-input-controls">
+                    <input
+                        type="file"
+                        ref={fileInputRefs[field]}
+                        style={{ display: 'none' }}
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, field)}
+                    />
+                    <button type="button" className="upload-btn" onClick={() => fileInputRefs[field].current?.click()}>Carregar Arquivo</button>
+                </div>
+            </div>
         </div>
     );
 
@@ -109,7 +158,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({ isOpen, 
 
                 </div>
                 <div className="modal-footer">
-                    <button onClick={handleSave}>Salvar Alterações</button>
+                    <button onClick={handleSave}>Salvar e Fechar</button>
                 </div>
             </div>
         </div>

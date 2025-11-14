@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { getCampaignsByMasterId, getPlayersByCampaignId, getCampaignById } from '../api/campaigns';
 import { Campaign, CampaignPlayer } from '../types';
 import CreateCampaignModal from './modals/CreateCampaignModal';
 import LinkCharacterModal from './modals/LinkCharacterModal';
+import CampaignCard from './CampaignCard';
 
-interface Props {
-  onOpenCampaign: (id: string) => void;
-}
-
-export const CampaignsListPage: React.FC<Props> = ({ onOpenCampaign }) => {
+const CampaignsListPage: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [playerCampaigns, setPlayerCampaigns] = useState<(Campaign & { agentId: string | null })[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -86,49 +84,39 @@ export const CampaignsListPage: React.FC<Props> = ({ onOpenCampaign }) => {
   };
 
   return (
-    <div className="campaigns-page">
-      <div className="campaigns-header">
+    <div className="campaign-list-page">
+      <div className="page-header">
         <h2>Campanhas</h2>
-        <button onClick={() => setShowCreate(true)}>+ Nova Campanha</button>
+        <button className="button-primary" onClick={() => setShowCreate(true)}>+ Nova Campanha</button>
       </div>
 
-      {/* Campanhas como Mestre */}
-      {campaigns.length > 0 && (
-        <div className="campaigns-section">
-          <h3>Como Mestre</h3>
-          <div className="campaigns-grid">
-            {campaigns.map(c => (
-              <div key={c.id} className="campaign-card">
-                <h3>{c.name}</h3>
-                <div className="campaign-actions">
-                  <button onClick={() => onOpenCampaign(c.id)}>Abrir</button>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="campaign-section">
+        <h3>Como Mestre</h3>
+        <div className="campaigns-grid">
+          {campaigns.map(c => (
+            <CampaignCard
+              key={c.id}
+              campaign={c}
+              isPlayer={false}
+            />
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Campanhas como Jogador */}
-      {playerCampaigns.length > 0 && (
-        <div className="campaigns-section">
-          <h3>Como Jogador</h3>
-          <div className="campaigns-grid">
-            {playerCampaigns.map(c => (
-              <div key={c.id} className="campaign-card">
-                <h3>{c.name}</h3>
-                <div className="campaign-actions">
-                  {c.agentId ? (
-                    <button onClick={() => onOpenCampaign(c.id)}>Abrir</button>
-                  ) : (
-                    <button onClick={() => handleLinkCharacter(c.id)}>Vincular Personagem</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="campaign-section">
+        <h3>Como Jogador</h3>
+        <div className="campaigns-grid">
+          {playerCampaigns.map(c => (
+            <CampaignCard
+              key={c.id}
+              campaign={c}
+              isPlayer={true}
+              agentId={c.agentId}
+              onLinkCharacter={handleLinkCharacter}
+            />
+          ))}
         </div>
-      )}
+      </div>
 
       {campaigns.length === 0 && playerCampaigns.length === 0 && (
         <p>Nenhuma campanha encontrada.</p>

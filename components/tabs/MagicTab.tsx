@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Ritual, LearnedParticle, AgentData, ToastData } from '../../types.ts';
 
 // --- Modal Component Definition ---
@@ -15,7 +15,6 @@ const ArcaneDeconstructionModal: React.FC<ArcaneDeconstructionModalProps> = ({ i
     const [newParticleName, setNewParticleName] = useState('');
 
     const COST = 50;
-    // FIX: Property 'paAtual' does not exist on type 'Character'. Use 'paDisponivel' instead.
     const canAfford = agent.character.paDisponivel >= COST;
 
     const handleConfirm = () => {
@@ -54,12 +53,12 @@ const ArcaneDeconstructionModal: React.FC<ArcaneDeconstructionModalProps> = ({ i
     };
     
     // Reset state when modal opens
-    useState(() => {
+    useEffect(() => {
         if (isOpen) {
             setSelectedAbilityId('');
             setNewParticleName('');
         }
-    });
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -75,13 +74,13 @@ const ArcaneDeconstructionModal: React.FC<ArcaneDeconstructionModalProps> = ({ i
                     
                     <div className="form-group">
                         <label htmlFor="skill-to-deconstruct-select">Habilidade a Desconstruir:</label>
-                        <select 
+                        <select
                             id="skill-to-deconstruct-select"
                             value={selectedAbilityId}
                             onChange={(e) => setSelectedAbilityId(e.target.value)}
                         >
                             <option value="" disabled>Selecione uma habilidade...</option>
-                            {agent.habilidadesBeyonder.map(ability => (
+                            {agent.habilidadesBeyonder.filter(ability => ability.isDomain).map(ability => (
                                 <option key={ability.id} value={ability.id.toString()}>
                                     {ability.name} ({ability.seqName || 'Única'})
                                 </option>
@@ -132,27 +131,23 @@ interface MagicTabProps {
 export const MagicTab: React.FC<MagicTabProps> = ({
     agent, onUpdate, onOpenMagicGrimoire, addLogEntry
 }) => {
+    if (!agent) return null;
+
     const [isDeconstructionModalOpen, setIsDeconstructionModalOpen] = useState(false);
-    // FIX: Renamed 'rituals' to 'rituais' to match the AgentData type.
     const { rituais = [], learnedParticles = [], character } = agent;
 
     const handleRitualChange = (id: number, field: keyof Ritual, value: any) => {
-        // FIX: Renamed 'rituals' to 'rituais' to match the AgentData type.
         const newRituals = rituais.map(r => r.id === id ? { ...r, [field]: value } : r);
-        // FIX: Renamed 'rituals' to 'rituais' to match the AgentData type.
         onUpdate({ ...agent, rituais: newRituals });
     };
 
     const handleAddRitual = () => {
         const newRitual: Ritual = { id: Date.now(), name: 'Novo Ritual', description: '' };
-        // FIX: Renamed 'rituals' to 'rituais' to match the AgentData type.
         onUpdate({ ...agent, rituais: [...rituais, newRitual] });
     };
 
     const handleDeleteRitual = (id: number) => {
-        // FIX: Renamed 'rituals' to 'rituais' to match the AgentData type.
         const newRituals = rituais.filter(r => r.id !== id);
-        // FIX: Renamed 'rituals' to 'rituais' to match the AgentData type.
         onUpdate({ ...agent, rituais: newRituals });
     };
     
@@ -168,8 +163,7 @@ export const MagicTab: React.FC<MagicTabProps> = ({
                     <h4>Rituais & Feitiçaria</h4>
                     <button onClick={handleAddRitual}>+ Novo Ritual</button>
                 </div>
-                 {/* FIX: Renamed 'rituals' to 'rituais' to match the AgentData type. */}
-                 {rituais.map(ritual => (
+                {rituais.map(ritual => (
                     <div key={ritual.id} className="tab-list-item">
                         <div className="item-header">
                             <input type="text" value={ritual.name} onChange={e => handleRitualChange(ritual.id, 'name', e.target.value)} />

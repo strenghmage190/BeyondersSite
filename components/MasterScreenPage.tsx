@@ -1,150 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
-import { getCampaignById } from '../api/campaigns';
-import type { Campaign } from '../types';
-import MiniCharacterCard from './MiniCharacterCard';
+// Em /components/MasterScreenPage.tsx
 
-interface Props {
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+import { getCampaignById, getPlayersByCampaignId, getCampaignsByMasterId } from '../api/campaigns';
+import type { Campaign, Character } from '../types';
+import MiniSheet from './MiniSheet';
+import DiceLogEntry from './DiceLogEntry';
+
+
+interface MasterScreenPageProps {
   campaignId?: string;
 }
 
-const gridStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-  gap: 12,
-  padding: 12
-};
+const MasterScreenPage = ({ campaignId }: MasterScreenPageProps) => {
+  // =======================================================
+  // 1. FONTE DA VERDADE E DECLARAÇÃO DE TODOS OS HOOKS
+  // =======================================================
+  const { campaignId: paramCampaignId } = useParams<{ campaignId: string }>();
+  const navigate = useNavigate();
+  const effectiveCampaignId = campaignId || paramCampaignId;
 
-const layoutStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: 12,
-  alignItems: 'flex-start'
-};
-
-const sidebarStyle: React.CSSProperties = {
-  width: 360,
-  background: '#0b0b0b',
-  border: '1px solid #222',
-  borderRadius: 8,
-  padding: 12,
-  height: 'fit-content'
-};
-
-const headerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '12px',
-  borderBottom: '1px solid #222'
-};
-
-const MasterScreenPage: React.FC<Props> = ({ campaignId }) => {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [hideAgents, setHideAgents] = useState(false);
   const [characters, setCharacters] = useState<any[]>([]);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      let id = campaignId;
-      if (!id) {
-        // pick first campaign of current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setCampaign(null);
-          setLoading(false);
-          return;
-        }
-        // fetch campaigns and pick first
-        const { getCampaignsByMasterId } = await import('../api/campaigns');
-        const list = await getCampaignsByMasterId(user.id);
-        if (!list || list.length === 0) {
-          setCampaign(null);
-          setLoading(false);
-          return;
-        }
-        id = list[0].id;
-      }
-
-      const found = await getCampaignById(id!);
-      setCampaign(found);
-
-      // load characters for campaign players
-      if (found && found.players && found.players.length > 0) {
-        const fetched: any[] = [];
-        for (const p of found.players) {
-          try {
-            // attempt to fetch agent by id from supabase agents table
-            const agentId = p.agentId;
-            if (!agentId) {
-              fetched.push({ id: `user_${p.userId}`, character: { name: `Player ${p.userId}` } });
-              continue;
-            }
-            const { data, error } = await supabase.from('agents').select('data, id').eq('id', agentId).single();
-            if (error || !data) {
-              // fallback placeholder
-              fetched.push({ id: agentId, character: { name: `Agent ${agentId}` } });
-            } else {
-              fetched.push({ id: data.id, ...data });
-            }
-          } catch (err) {
-            fetched.push({ id: p.agentId || p.userId, character: { name: `Unknown` } });
-          }
-        }
-        setCharacters(fetched);
-      } else {
-        setCharacters([]);
-      }
-
-      setLoading(false);
-    }
-    load();
-  }, [campaignId]);
-
-  if (loading) return <div style={{ padding: 12 }}>Carregando Escudo do Mestre...</div>;
-  if (!campaign) return <div style={{ padding: 12 }}>Nenhuma campanha encontrada.</div>;
-
-  // define NPCs/agents as entries where player.userId === campaign.gm_id (master)
-  const masterId = (campaign as any).gm_id || (campaign as any).masterId || null;
-
-  const visibleCharacters = characters.filter((c, idx) => {
-    const player = campaign.players[idx];
-    if (!player) return true;
-    const isAgentOfMaster = player.userId === masterId;
-    if (hideAgents && isAgentOfMaster) return false;
-    return true;
-  });
-
-  // Initiative tracker state
+  
   const [selectedIds, setSelectedIds] = useState<Record<string | number, boolean>>({});
   const [initiativeOrder, setInitiativeOrder] = useState<Array<{ id: string | number; name: string; initiative: number; status?: string }>>([]);
   const [activeIndex, setActiveIndex] = useState<number>(0);
-
-  // Notes state (per campaign)
-  const notesKey = `beyonders_notes_${campaign.id}`;
   const [notes, setNotes] = useState<string>('');
 
-  useEffect(() => {
-    // load notes from localStorage
-    try {
-      const raw = localStorage.getItem(notesKey) || '';
-      setNotes(raw);
-    } catch (e) {
-      setNotes('');
-    }
-  }, [notesKey]);
+  const notesKey = `beyonders_notes_${effectiveCampaignId}`;
 
-  // debounce save notes
+  // Dice roll log state
+  const [diceLog, setDiceLog] = useState<any[]>([]);
+
+  // Hook principal de busca de dados
   useEffect(() => {
+    async function load() {
+      setLoading(true);
+      let id = effectiveCampaignId;
+
+      if (!id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const list = await getCampaignsByMasterId(user.id);
+          if (list && list.length > 0) id = list[0].id;
+        }
+      }
+
+      if (!id) {
+        setCampaign(null);
+        setCharacters([]);
+        setLoading(false);
+        return;
+      }
+
+      const [foundCampaign, foundPlayers] = await Promise.all([
+        getCampaignById(id),
+        getPlayersByCampaignId(id)
+      ]);
+
+      setCampaign(foundCampaign);
+      setCharacters(foundPlayers || []);
+      setLoading(false);
+    }
+    load();
+  }, [effectiveCampaignId]);
+
+  // Hook para anotações (linha 87)
+  useEffect(() => {
+    if (!campaign) return; // Proteção para garantir que a chave exista
+    const key = `beyonders_notes_${campaign.id}`;
+    try {
+      setNotes(localStorage.getItem(key) || '');
+    } catch (e) { setNotes(''); }
+  }, [campaign]); // Depende do objeto campaign
+
+  // Hook para salvar anotações
+  useEffect(() => {
+    if (!campaign) return;
+    const key = `beyonders_notes_${campaign.id}`;
     const t = setTimeout(() => {
-      try { localStorage.setItem(notesKey, notes); } catch (e) { }
+      try { localStorage.setItem(key, notes); } catch (e) { }
     }, 600);
     return () => clearTimeout(t);
-  }, [notes, notesKey]);
+  }, [notes, campaign]);
 
-  // load saved initiative (if any)
+  // Hook para iniciativa
   useEffect(() => {
+    if (!campaign) return;
     const key = `beyonders_initiative_${campaign.id}`;
     try {
       const raw = localStorage.getItem(key);
@@ -154,35 +100,93 @@ const MasterScreenPage: React.FC<Props> = ({ campaignId }) => {
         setActiveIndex(parsed.activeIndex || 0);
       }
     } catch (e) { }
-  }, [campaign.id]);
+  }, [campaign]);
 
+  // Hook for real-time dice roll logging
+  useEffect(() => {
+    if (!campaign) return;
+
+    // ... (lógica opcional de fetchInitialLogs) ...
+
+    const channel = supabase
+      .channel(`realtime_dice_rolls_${campaign.id}`) // Use um nome de canal único
+      .on('postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'dice_rolls',
+            filter: `campaign_id=eq.${campaign.id}` // Filtra apenas para esta campanha
+          },
+          (payload) => {
+            console.log("NOVA ROLAGEM RECEBIDA VIA REALTIME:", payload.new); // Adicione este log para depurar
+            setDiceLog(prevLog => [...prevLog, payload.new]);
+          }
+      )
+      .subscribe((status) => {
+        // Adicione este callback para ver se a inscrição foi bem-sucedida
+        console.log(`STATUS DA INSCRIÇÃO REALTIME: ${status}`);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [campaign]);
+
+  // =======================================================
+  // 2. LÓGICA DE RETORNO ANTECIPADO (DEPOIS DOS HOOKS)
+  // =======================================================
+  if (loading) return <div className="loading-state">Carregando Escudo do Mestre...</div>;
+  if (!campaign) return <div className="empty-state">Nenhuma campanha encontrada.</div>;
+
+
+  // =======================================================
+  // 3. FUNÇÕES HANDLER E RETORNO FINAL
+  // =======================================================
+
+  // ... (todas as suas funções como saveInitiativeState, toggleSelect, rollInitiatives, etc. vêm aqui)
+  // O código deles pode permanecer o mesmo.
+  // ...
   const saveInitiativeState = (order: any[], active: number) => {
     const key = `beyonders_initiative_${campaign.id}`;
     try { localStorage.setItem(key, JSON.stringify({ order, activeIndex: active })); } catch (e) { }
   };
-
-  const toggleSelect = (id: string | number) => {
+    const toggleSelect = (id: string | number) => {
     setSelectedIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const rollInitiatives = () => {
     const participants = visibleCharacters.filter(ch => selectedIds[ch.id]);
-    const rolled = participants.map(ch => {
-      const base = (ch.data?.character?.initiative) ?? (ch.character?.initiative) ?? 0;
-      const roll = Math.floor(Math.random() * 20) + 1;
-      const total = roll + base;
-      const name = (ch.data?.character?.name) ?? (ch.character?.name) ?? `#${ch.id}`;
-      return { id: ch.id, name, initiative: total, status: '' };
-    });
-    rolled.sort((a, b) => b.initiative - a.initiative);
-    setInitiativeOrder(rolled);
-    setActiveIndex(0);
-    saveInitiativeState(rolled, 0);
-  };
 
-  const nextTurn = () => {
+    const rolled = participants
+      .map(ch => {
+        // Pula participantes inválidos
+        if (!ch?.id || !ch?.agents?.data?.character) return null;
+
+        const baseInitiative = ch.agents.data.character.initiative ?? 0;
+        const roll = Math.floor(Math.random() * 20) + 1;
+        const total = roll + baseInitiative;
+        const name = ch.agents.data.character.name || `Participante #${ch.id}`;
+
+        return { id: ch.id, name, initiative: total, status: '' };
+      })
+      .filter(Boolean); // Filtra todos os nulos
+
+    if (rolled.length === 0) {
+      setInitiativeOrder([]);
+      setActiveIndex(0);
+      saveInitiativeState([], 0);
+      return;
+    }
+
+    rolled.sort((a, b) => b.initiative - a.initiative);
+    setInitiativeOrder(rolled as any);
+    setActiveIndex(0);
+    saveInitiativeState(rolled as any, 0);
+  };
+  
+    const nextTurn = () => {
     setActiveIndex(i => {
-      const next = Math.min((initiativeOrder.length - 1), i + 1);
+      const next = (i + 1) % initiativeOrder.length; // Volta para o início
       saveInitiativeState(initiativeOrder, next);
       return next;
     });
@@ -190,115 +194,171 @@ const MasterScreenPage: React.FC<Props> = ({ campaignId }) => {
 
   const prevTurn = () => {
     setActiveIndex(i => {
-      const prev = Math.max(0, i - 1);
+      const prev = (i - 1 + initiativeOrder.length) % initiativeOrder.length; // Volta para o final
       saveInitiativeState(initiativeOrder, prev);
       return prev;
     });
   };
 
-  const updateAgentCharacter = async (agentId: string | number, updatedCharacter: any) => {
-    // update local state immediately
-    setCharacters(prev => prev.map(ch => {
-      if (ch.id === agentId) {
-        const copy = { ...ch };
-        if (copy.data) {
-          copy.data = { ...(copy.data), character: updatedCharacter };
-        } else {
-          copy.character = updatedCharacter;
-        }
-        return copy;
+  const updateAgentCharacter = async (agentId: string, updates: Partial<Character>) => {
+    // 1. ATUALIZAÇÃO OTIMISTA DA UI
+    setCharacters(prev => prev.map(p => {
+      if (p.agent_id === agentId) {
+        const newParticipant = JSON.parse(JSON.stringify(p)); // Cópia segura
+        // Mescla o objeto 'character' antigo apenas com as novas 'updates'
+        newParticipant.agents.data.character = {
+          ...newParticipant.agents.data.character,
+          ...updates
+        };
+        return newParticipant;
       }
-      return ch;
+      return p;
     }));
 
-    // persist to Supabase if this row has a 'data' object (real agent)
-    const existing = characters.find(c => c.id === agentId);
-    if (existing && existing.data) {
-      const updatedData = { ...(existing.data), character: updatedCharacter };
-      try {
-        const { error } = await supabase.from('agents').update({ data: updatedData }).eq('id', agentId as any);
-        if (error) console.error('Failed to persist agent update', error);
-      } catch (e) {
-        console.error('Error updating agent in supabase', e);
-      }
+    // 2. PERSISTÊNCIA SEGURA NO BANCO DE DADOS
+    try {
+      // Busca os dados mais recentes do agente para evitar sobrescrever com dados antigos
+      const { data: currentAgentData, error: fetchError } = await supabase
+        .from('agents')
+        .select('data')
+        .eq('id', agentId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Mescla os dados completos do banco com as novas atualizações
+      const updatedData = {
+        ...currentAgentData.data,
+        character: {
+          ...currentAgentData.data.character,
+          ...updates // Apenas o que mudou
+        }
+      };
+
+      // Salva o objeto 'data' completo e mesclado
+      const { error: updateError } = await supabase
+        .from('agents')
+        .update({ data: updatedData })
+        .eq('id', agentId);
+      if (updateError) throw updateError;
+
+    } catch (e) {
+      console.error('Falha ao persistir a atualização do agente:', e);
+      // Revert UI state on failure
+      setCharacters(prev => prev.map(p => {
+        if (p.agent_id === agentId) {
+          const revertedParticipant = JSON.parse(JSON.stringify(p));
+          // Remove the updates from the character object
+          revertedParticipant.agents.data.character = {
+            ...revertedParticipant.agents.data.character,
+          };
+          // Since we don't have the original state, we need to refetch or handle differently
+          // For now, just log and potentially show a toast
+          return revertedParticipant;
+        }
+        return p;
+      }));
+      // TODO: Add toast notification for failure
     }
+  };
+  const masterId = campaign.gm_id;
+
+  const visibleCharacters = characters.filter(p => {
+    // Lógica simplificada para ocultar NPCs
+    const isNpc = p.player_id === null;
+    if (hideAgents && isNpc) return false;
+    return true;
+  });
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
   return (
-    <div>
-      <header style={headerStyle}>
-        <div>
-          <h2 style={{ margin: 0 }}>{campaign.name}</h2>
-          <div style={{ fontSize: 12, color: '#999' }}>Escudo do Mestre</div>
-        </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <label style={{ fontSize: 13 }}>
-            <input type="checkbox" checked={hideAgents} onChange={() => setHideAgents(v => !v)} />{' '}
-            Ocultar agentes para jogadores
-          </label>
-        </div>
-      </header>
-
-      <main style={layoutStyle}>
-        <section style={{ flex: 1 }}>
-          <div style={{ marginBottom: 8, padding: '0 12px' }}>
-            <div style={{ fontSize: 13, color: '#bbb' }}>Selecione participantes para combate:</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+    <div className="master-screen">
+      <main className="ms-main-layout">
+        <section className="ms-main-column">
+          <div className="ms-participants-selector">
+            <h4>Selecione os Participantes</h4>
+            <div className="ms-participants-grid">
               {visibleCharacters.map(ch => {
-                const name = (ch.data?.character?.name) ?? (ch.character?.name) ?? `#${ch.id}`;
+                const name = ch.agents?.data?.character?.name ?? `Participante #${ch.id}`;
                 return (
-                  <label key={ch.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0b0b0b', padding: '6px 8px', borderRadius: 6, border: '1px solid #222' }}>
+                  <label key={ch.id} className="ms-participant-tag">
                     <input type="checkbox" checked={!!selectedIds[ch.id]} onChange={() => toggleSelect(ch.id)} />
-                    <span style={{ fontSize: 13 }}>{name}</span>
+                    <span>{name}</span>
                   </label>
                 );
               })}
             </div>
-            <div style={{ marginTop: 10 }}>
-              <button onClick={rollInitiatives} style={{ marginRight: 8 }}>Rolar Iniciativas!</button>
-              <button onClick={() => { setInitiativeOrder([]); setActiveIndex(0); saveInitiativeState([], 0); }}>Limpar</button>
+            <div className="ms-participants-actions">
+              <button onClick={rollInitiatives} className="button-primary">Rolar Iniciativas!</button>
+              <button onClick={() => { setInitiativeOrder([]); setActiveIndex(0); saveInitiativeState([], 0); }}>Limpar Combate</button>
             </div>
           </div>
-
-          <section style={gridStyle}>
+          <div className="ms-character-grid">
             {visibleCharacters.length === 0 ? (
-              <div style={{ padding: 12 }}>Nenhum personagem disponível.</div>
+              <div className="ms-empty-state">Nenhum personagem disponível.</div>
             ) : (
-              visibleCharacters.map(ch => (
-                <MiniCharacterCard key={ch.id} agent={ch} onOpen={() => alert(`Abrir ficha ${ch.id}`)} onUpdateAgent={updateAgentCharacter} />
-              ))
+              visibleCharacters.map(ch => {
+                // 👇👇👇 ADICIONE ESTE LOG AQUI 👇👇👇
+                console.log("DADOS COMPLETOS DO PARTICIPANTE:", ch);
+
+                return (
+                  <MiniSheet
+                    key={ch.id}
+                    agentData={ch.agents.data} // Passe o objeto de dados completo
+                    campaignId={campaign.id} // Passe o ID da campanha
+                    onUpdate={(updates) => updateAgentCharacter(ch.agent_id, updates)}
+                  />
+                );
+              })
             )}
-          </section>
+          </div>
         </section>
+        <aside className="ms-sidebar">
+          <div className="ms-sidebar-widget">
+            <h3>Ordem de Combate</h3>
+            {initiativeOrder.length === 0 ? (
+              <div className="ms-empty-state small">Nenhuma iniciativa rolada.</div>
+            ) : (
+              <>
+                <ol className="ms-initiative-list">
+                  {initiativeOrder.map((p, idx) => {
+                    // 👇👇👇 ADICIONE ESTA LINHA DE SEGURANÇA 👇👇👇
+                    if (!p) return null; // Pula a renderização se o item 'p' for nulo ou undefined
 
-        <aside style={sidebarStyle}>
-          <h3 style={{ marginTop: 0 }}>Ordem de Combate</h3>
-          {initiativeOrder.length === 0 ? (
-            <div style={{ color: '#999', marginBottom: 8 }}>Nenhuma iniciativa rolada.</div>
-          ) : (
-            <div>
-              <ol style={{ paddingLeft: 18 }}>
-                {initiativeOrder.map((p, idx) => (
-                  <li key={p.id} style={{ marginBottom: 6, background: idx === activeIndex ? '#122' : 'transparent', padding: '6px', borderRadius: 6 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ fontWeight: 700 }}>{p.name}</div>
-                      <div style={{ color: '#ddd' }}>{p.initiative}</div>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#aaa' }}>{p.status || ''}</div>
-                  </li>
+                    return (
+                      <li key={p.id || idx} className={idx === activeIndex ? 'active' : ''}>
+                        <div className="initiative-entry">
+                          {/* 👇 ADICIONE VALORES PADRÃO PARA CADA PROPRIEDADE 👇 */}
+                          <span className="name">{p.name || 'Nome Inválido'}</span>
+                          <span className="value">{p.initiative ?? 0}</span>
+                        </div>
+                        <div className="status">{p.status || ''}</div>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className="ms-initiative-controls">
+                  <button onClick={prevTurn}>{'<'} Anterior</button>
+                  <button onClick={nextTurn}>Próximo {'>'}</button>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="ms-sidebar-widget">
+            <h3>Log de Dados</h3>
+            {diceLog.length === 0 ? (
+              <div className="ms-empty-state small">Nenhuma rolagem registrada.</div>
+            ) : (
+              <ul className="ms-dice-log-list">
+                {diceLog.map((roll, idx) => (
+                  <DiceLogEntry key={idx} roll={roll} />
                 ))}
-              </ol>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button onClick={prevTurn}>Turno Anterior</button>
-                <button onClick={nextTurn}>Próximo Turno</button>
-              </div>
-            </div>
-          )}
-
-          <hr style={{ borderColor: '#222', margin: '12px 0' }} />
-
-          <h3 style={{ marginTop: 0 }}>Anotações do Mestre</h3>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anotações rápidas..." style={{ width: '100%', minHeight: 160, background: '#071017', color: '#ddd', border: '1px solid #222', borderRadius: 6, padding: 8 }} />
+              </ul>
+            )}
+          </div>
         </aside>
       </main>
     </div>

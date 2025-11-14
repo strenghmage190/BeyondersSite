@@ -1,3 +1,5 @@
+// /api/campaigns.ts
+
 import { supabase } from '../supabaseClient';
 import { Campaign, CampaignPlayer } from '../types';
 
@@ -5,15 +7,11 @@ import { Campaign, CampaignPlayer } from '../types';
  * Cria uma nova campanha no banco de dados Supabase.
  */
 export async function createCampaign(name: string, masterId: string): Promise<Campaign> {
-  // Gera um código de convite único
-  const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
   const { data, error } = await supabase
     .from('campaigns')
     .insert({
       name: name,
-      gm_id: masterId, // Certifique-se que sua coluna se chama 'gm_id'
-      invite_code: inviteCode
+      gm_id: masterId,
     })
     .select()
     .single();
@@ -32,22 +30,13 @@ export async function getCampaignsByMasterId(masterId: string): Promise<Campaign
   const { data, error } = await supabase
     .from('campaigns')
     .select('*')
-    .eq('gm_id', masterId); // Filtra pela coluna do mestre
+    .eq('gm_id', masterId);
 
   if (error) {
     console.error('Erro ao buscar campanhas por mestre:', error);
     return [];
   }
-
-  // Map to Campaign type
-  const campaigns: Campaign[] = (data || []).map(c => ({
-    id: c.id,
-    name: c.name,
-    gm_id: c.gm_id,
-    invite_code: c.invite_code
-  }));
-
-  return campaigns;
+  return (data as Campaign[]) || [];
 }
 
 /**
@@ -58,48 +47,42 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
     .from('campaigns')
     .select('*')
     .eq('id', id)
-    .single(); // .single() pega um único registro ou retorna erro se não achar (ou achar mais de um)
+    .single();
 
   if (error) {
-    // É normal não encontrar um registro, então só logamos outros tipos de erro
     if (error.code !== 'PGRST116') {
       console.error('Erro ao buscar campanha por ID:', error);
     }
     return null;
   }
-
-  // Map to Campaign type
-  const campaign: Campaign = {
-    id: data.id,
-    name: data.name,
-    gm_id: data.gm_id,
-    invite_code: data.invite_code
-  };
-
-  return campaign;
+  return data as Campaign | null;
 }
 
 /**
- * Busca os jogadores de uma campanha específica.
+ * Busca os jogadores de uma campanha específica, incluindo os dados dos seus agentes.
  */
-export async function getPlayersByCampaignId(campaignId: string): Promise<CampaignPlayer[]> {
+export async function getPlayersByCampaignId(campaignId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('campaign_players')
-    .select('*')
+    // 👇👇👇 ESTA É A CORREÇÃO. A SINTAXE DE JOIN DA SUPABASE 👇👇👇
+    .select(`
+      id,
+      campaign_id,
+      player_id,
+      agent_id,
+      agents (
+        id,
+        data
+      )
+    `)
     .eq('campaign_id', campaignId);
 
   if (error) {
-    console.error('Erro ao buscar jogadores da campanha:', error);
+    console.error('Erro ao buscar jogadores da campanha com join:', error);
     return [];
   }
 
-  // Map to CampaignPlayer type
-  const players: CampaignPlayer[] = (data || []).map(p => ({
-    userId: p.player_id,
-    agentId: p.agent_id
-  }));
-
-  return players;
+  return data || [];
 }
 
 /**
@@ -111,8 +94,7 @@ export async function addPlayerToCampaign(campaignId: string, playerId: string):
     .insert({
       campaign_id: campaignId,
       player_id: playerId,
-      // agent_id pode ser null se o jogador ainda não tem um personagem
-      agent_id: null
+      agent_id: null,
     })
     .select()
     .single();
@@ -126,7 +108,6 @@ export async function addPlayerToCampaign(campaignId: string, playerId: string):
 
 /**
  * Vincula um AGENTE (NPC) existente a uma campanha.
- * O player_id fica nulo para indicar que é um NPC controlado pelo mestre.
  */
 export async function linkAgentToCampaign(campaignId: string, agentId: string): Promise<any> {
   const { data, error } = await supabase
@@ -134,7 +115,7 @@ export async function linkAgentToCampaign(campaignId: string, agentId: string): 
     .insert({
       campaign_id: campaignId,
       agent_id: agentId,
-      player_id: null // NULO significa que é um NPC
+      player_id: null,
     })
     .select()
     .single();
@@ -148,12 +129,11 @@ export async function linkAgentToCampaign(campaignId: string, agentId: string): 
 
 /**
  * Vincula o PERSONAGEM (agent) de um JOGADOR a uma campanha.
- * Isso atualiza a entrada existente criada durante o convite.
  */
 export async function linkPlayerCharacter(campaignId: string, playerId: string, agentId: string): Promise<any> {
   const { data, error } = await supabase
     .from('campaign_players')
-    .update({ agent_id: agentId }) // Apenas atualiza o agent_id
+    .update({ agent_id: agentId })
     .eq('campaign_id', campaignId)
     .eq('player_id', playerId)
     .select()
@@ -173,11 +153,11 @@ export async function getCampaignByInviteCode(code: string): Promise<Campaign | 
   const { data, error } = await supabase
     .from('campaigns')
     .select('*')
-    .eq('invite_code', code) // Busca pela nova coluna
+    .eq('invite_code', code)
     .single();
 
   if (error) {
-    if (error.code !== 'PGRST116') { // Ignora o erro "not found"
+    if (error.code !== 'PGRST116') {
       console.error('Erro ao buscar campanha por código de convite:', error);
     }
     return null;
@@ -187,17 +167,14 @@ export async function getCampaignByInviteCode(code: string): Promise<Campaign | 
 
 /**
  * Atualiza os dados de uma campanha existente.
- * @param campaignId O ID da campanha a ser atualizada.
- * @param updates Um objeto com os campos a serem atualizados (ex: { name: 'Novo Nome' }).
- * @returns A campanha atualizada.
  */
 export async function updateCampaign(campaignId: string, updates: Partial<Campaign>): Promise<Campaign> {
   const { data, error } = await supabase
     .from('campaigns')
     .update(updates)
     .eq('id', campaignId)
-    .select() // Pede ao Supabase para retornar o registro atualizado
-    .single(); // Espera um único resultado
+    .select()
+    .single();
 
   if (error) {
     console.error('Erro ao atualizar a campanha:', error);
@@ -206,20 +183,33 @@ export async function updateCampaign(campaignId: string, updates: Partial<Campai
   return data as Campaign;
 }
 
+
 /**
- * Faz upload de uma imagem de capa para o bucket 'campaign-covers' no Supabase,
- * obtém a URL pública e atualiza a campanha com essa URL.
- * @param campaignId O ID da campanha.
- * @param file O arquivo de imagem a ser enviado.
- * @returns A campanha atualizada com a nova cover_image_url.
+ * Remove o vínculo de um jogador/agente de uma campanha.
+ * @param linkId O ID da linha na tabela 'campaign_players'.
+ */
+export async function removeParticipantFromCampaign(linkId: string): Promise<void> {
+  const { error } = await supabase
+    .from('campaign_players')
+    .delete()
+    .eq('id', linkId); // Apaga a linha específica da ligação
+
+  if (error) {
+    console.error('Erro ao remover participante da campanha:', error);
+    throw error;
+  }
+}
+
+/**
+ * Faz upload de uma imagem de capa, salva o path no banco e atualiza a campanha.
  */
 export async function uploadAndSetCampaignCover(campaignId: string, file: File): Promise<Campaign> {
-  // Gera um nome único para o arquivo
+  // 1. Gera um nome único para o arquivo
   const fileExt = file.name.split('.').pop();
   const fileName = `${campaignId}_${Date.now()}.${fileExt}`;
 
-  // Faz upload para o bucket 'campaign-covers'
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  // 2. Faz upload para o bucket
+  const { error: uploadError } = await supabase.storage
     .from('campaign-covers')
     .upload(fileName, file);
 
@@ -228,15 +218,35 @@ export async function uploadAndSetCampaignCover(campaignId: string, file: File):
     throw uploadError;
   }
 
-  // Obtém a URL pública do arquivo
-  const { data: publicUrlData } = supabase.storage
-    .from('campaign-covers')
-    .getPublicUrl(fileName);
-
-  const publicUrl = publicUrlData.publicUrl;
-
-  // Atualiza a campanha com a nova URL da imagem de capa
-  const updatedCampaign = await updateCampaign(campaignId, { cover_image_url: publicUrl });
+  // 3. Salva APENAS o path no banco de dados, não a URL inteira.
+  const updatedCampaign = await updateCampaign(campaignId, { cover_image_url: fileName });
 
   return updatedCampaign;
+}
+
+/**
+ * Registra uma rolagem de dados no banco de dados para exibição em tempo real.
+ */
+export async function logDiceRoll(payload: {
+  campaign_id: string;
+  character_name: string;
+  roll_name: string;
+  result: string;
+  details: string;
+  roll_data?: any;
+}) {
+  console.log("4. API: Função logDiceRoll recebida com payload:", payload); // LOG 4
+
+  try {
+    const { error } = await supabase.from('dice_rolls').insert(payload);
+
+    if (error) {
+      // Se houver um erro do Supabase, ele será mostrado aqui
+      console.error("ERRO DETALHADO DENTRO DA API:", error); // LOG DE ERRO
+    } else {
+      console.log("5. API: Rolagem inserida no banco com sucesso!"); // LOG DE SUCESSO
+    }
+  } catch (e) {
+    console.error("ERRO INESPERADO NA API:", e);
+  }
 }

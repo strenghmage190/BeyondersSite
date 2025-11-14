@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Campaign, CampaignPlayer } from '../types';
-import { getCampaignById, getCampaignsByMasterId, getPlayersByCampaignId } from '../api/campaigns';
+import { getCampaignById, getCampaignsByMasterId, getPlayersByCampaignId, removeParticipantFromCampaign } from '../api/campaigns';
 import { supabase } from '../supabaseClient';
 import CharacterCard from './CharacterCard';
 import InvitePlayerModal from './modals/InvitePlayerModal';
@@ -56,19 +57,31 @@ const gridStyle: React.CSSProperties = {
 };
 
 const CampaignDashboardPage: React.FC<{ campaignId?: string }> = ({ campaignId }) => {
+  const navigate = useNavigate();
+  const { campaignId: paramCampaignId } = useParams<{ campaignId: string }>();
+  const effectiveCampaignId = campaignId || paramCampaignId;
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [players, setPlayers] = useState<CampaignPlayer[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('agents');
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showAddAgentModal, setShowAddAgentModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false); // <--- NOVO ESTADO
   const [showCoverModal, setShowCoverModal] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null); // <--- NOVO ESTADO
+
+  // 👇 1. CRIE UMA FUNÇÃO DEDICADA PARA BUSCAR OS JOGADORES
+  const loadPlayers = async (id: string) => {
+    console.log("3. DASHBOARD: A função loadPlayers foi chamada."); // LOG 3
+    const foundPlayers = await getPlayersByCampaignId(id);
+    console.log("4. DASHBOARD: Dados recebidos da API:", foundPlayers); // LOG 4
+    setPlayers(foundPlayers);
+  };
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      let id = campaignId;
+      let id = effectiveCampaignId;
       if (!id) {
         // fallback: pick first campaign of current user
         const { data: { user } } = await supabase.auth.getUser();
@@ -90,15 +103,39 @@ const CampaignDashboardPage: React.FC<{ campaignId?: string }> = ({ campaignId }
       }
 
       const found = await getCampaignById(id!);
-      if (found) {
-        const campaignPlayers = await getPlayersByCampaignId(id!);
-        setPlayers(campaignPlayers);
-      }
       setCampaign(found);
+      if (found) {
+        await loadPlayers(id!); // Carrega os jogadores após carregar a campanha
+      }
       setLoading(false);
     }
     load();
-  }, [campaignId]);
+  }, [effectiveCampaignId]);
+
+  // 👇👇👇 NOVO useEffect PARA GERAR A URL ASSINADA 👇👇👇
+  useEffect(() => {
+    // Se não houver campanha ou a URL da imagem estiver vazia, não faz nada.
+    if (!campaign?.cover_image_url) {
+      setCoverImageUrl(null);
+      return;
+    }
+
+    async function createSignedUrl() {
+      const { data, error } = await supabase.storage
+        .from('campaign-covers')
+        .createSignedUrl(campaign.cover_image_url, 3600); // 3600 segundos = 1 hora de validade
+
+      if (error) {
+        // Se o objeto não for encontrado, apenas não definimos a imagem
+        console.error(`Erro ao criar URL assinada para ${campaign.cover_image_url}:`, error);
+        setCoverImageUrl(null); // Garante que o placeholder seja exibido
+      } else {
+        setCoverImageUrl(data.signedUrl);
+      }
+    }
+
+    createSignedUrl();
+  }, [campaign]); // Roda sempre que os dados da campanha mudarem
 
   if (loading) return <div style={{ padding: 20 }}>Carregando campanha...</div>;
   if (!campaign) return <div style={{ padding: 20 }}>Campanha não encontrada.</div>;
@@ -119,14 +156,28 @@ const CampaignDashboardPage: React.FC<{ campaignId?: string }> = ({ campaignId }
     // Idealmente, você iria recarregar a lista de jogadores aqui
   };
 
-  const handleAgentAdded = (newLink: any) => {
-    // Atualiza a lista de jogadores/agentes na UI
-    // Recarregar a lista de players
-    if (campaign) {
-      getPlayersByCampaignId(campaign.id).then(setPlayers);
-    }
+  // 👇 2. MODIFIQUE O HANDLER PARA CHAMAR A NOVA FUNÇÃO
+  const handleAgentAdded = () => {
+    console.log("2. DASHBOARD: A função handleAgentAdded foi chamada."); // LOG 2
     setShowAddAgentModal(false);
+    loadPlayers(campaign!.id); // <-- AQUI ESTÁ A MÁGICA!
+    alert('Agente adicionado com sucesso!'); // Mova o alerta para cá
   };
+
+  const handleRemoveParticipant = async (linkId: string) => {
+    if (window.confirm("Tem certeza que deseja remover este participante da campanha?")) {
+      try {
+        await removeParticipantFromCampaign(linkId);
+        // Atualiza a UI removendo o participante da lista local
+        setPlayers(prev => prev.filter(p => p.id !== linkId));
+        alert('Participante removido com sucesso.');
+      } catch (error) {
+        alert('Ocorreu um erro ao remover o participante.');
+      }
+    }
+  };
+
+  console.log("5. DASHBOARD: Componente está renderizando com esta lista de players:", players); // LOG 5
 
   return (
     <div>
@@ -137,14 +188,15 @@ const CampaignDashboardPage: React.FC<{ campaignId?: string }> = ({ campaignId }
           <button onClick={handleCopyInviteLink}>Convidar com Link</button>
           <button onClick={() => setShowEditModal(true)}>Editar Campanha</button>
           <button onClick={() => alert('Funcionalidade de Criar Combate ainda não implementada')}>Criar Combate</button>
-          <button onClick={() => alert('Funcionalidade de Escudo do Mestre ainda não implementada')}>Escudo do Mestre</button>
+          <button onClick={() => navigate(`/masterscreen/${campaign.id}`)}>Escudo do Mestre</button>
         </div>
 
         <div>
           <h1 style={{ fontSize: 28, margin: '8px 0' }}>{campaign.name}</h1>
           <div className="campaign-cover-container">
-            {campaign.cover_image_url ? (
-              <img src={campaign.cover_image_url} alt="Capa da campanha" className="campaign-cover-image" />
+            {/* 👇 USE O NOVO ESTADO 'coverImageUrl' AQUI 👇 */}
+            {coverImageUrl ? (
+              <img src={coverImageUrl} alt={`Capa da campanha ${campaign.name}`} className="campaign-cover-image" />
             ) : (
               <div style={coverStyles}>Foto de Capa (placeholder)</div>
             )}
@@ -161,19 +213,28 @@ const CampaignDashboardPage: React.FC<{ campaignId?: string }> = ({ campaignId }
       <main>
         {activeTab === 'agents' && (
           <section style={gridStyle}>
-            {/* For demo: show any players as 'agents' if agentId present */}
-            {players.filter(p => p.agentId).length === 0 && <div style={{ padding: 12 }}>Nenhum agente (NPC) adicionado.</div>}
-            {players.filter(p => p.agentId).map(p => (
-              <CharacterCard
-                key={p.agentId}
-                name={p.agentId}
-                path={'NPC'}
-                createdAt={undefined}
-                onOpen={() => alert(`Abrir agente ${p.agentId}`)}
-                onEdit={() => alert('Editar agente')}
-                onRemove={() => alert('Remover agente')}
-              />
-            ))}
+            {players.length === 0 && <div style={{ padding: 12 }}>Nenhum agente (NPC) adicionado.</div>}
+
+            {/* 👇👇👇 MODIFICAÇÃO AQUI 👇👇👇 */}
+            {players.filter(p => p.agents).map(p => {
+              // Safety guard: if no agents data, skip rendering
+              if (!p.agents) {
+                console.log('CampaignDashboardPage: Skipping player without agents data', p);
+                return null;
+              }
+
+              console.log('CampaignDashboardPage: Rendering agent', { name: p.agents.data.character?.name, avatarUrl: p.agents.data.character?.avatarUrl });
+
+              return (
+                <CharacterCard
+                  key={p.id}
+                  agent={p.agents.data}
+                  onOpen={() => navigate(`/campaign/${p.campaign_id}/agent/${p.agent_id}`)}
+                  onEdit={() => navigate(`/campaign/${p.campaign_id}/agent/${p.agent_id}`)}
+                  onRemove={() => handleRemoveParticipant(p.id)}
+                />
+              );
+            })}
           </section>
         )}
 

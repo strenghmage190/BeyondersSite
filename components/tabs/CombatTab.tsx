@@ -19,7 +19,8 @@ interface CombatTabProps {
 }
 
 export const CombatTab: React.FC<CombatTabProps> = ({ agent, onUpdate, addLiveToast, addLogEntry, onOpenAddWeaponModal, onOpenAddProtectionModal, onOpenMagicCreator, onRollRequest, onDirectRoll }) => {
-    
+    if (!agent || !agent.character) return null;
+
     const { attacks = [], protections = [], character, attributes, habilidades } = agent;
 
     const onAttacksChange = (newAttacks: Attack[]) => onUpdate({ ...agent, attacks: newAttacks });

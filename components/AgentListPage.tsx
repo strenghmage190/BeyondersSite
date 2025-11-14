@@ -1,16 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AgentData } from '../types.ts';
 import { SettingsIcon } from './icons.tsx';
+import CharacterCard from './CharacterCard';
+import { supabase } from '../supabaseClient';
+import { useMyContext } from '../MyContext';
 
 interface AgentListPageProps {
-    agents: AgentData[];
-    onSelect: (id: number) => void;
     onAdd: () => void;
-    onDelete: (id: number) => void;
 }
 
-export const AgentListPage: React.FC<AgentListPageProps> = ({ agents, onSelect, onAdd, onDelete }) => {
+export const AgentListPage: React.FC<AgentListPageProps> = ({ onAdd }) => {
+    const navigate = useNavigate();
+    const { addLiveToast } = useMyContext();
+    const [agents, setAgents] = useState<AgentData[]>([]);
     const [deletingAgentId, setDeletingAgentId] = useState<number | null>(null);
+
+    useEffect(() => {
+        async function fetchAgents() {
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+            if (!user) {
+                console.log("Usuário não encontrado, não buscando agentes.");
+                setAgents([]); // Limpa os agentes se o usuário deslogar
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from("agents")
+                .select("data, id")
+                .eq("user_id", user.id);
+
+            if (error) {
+                console.error("Erro ao buscar agentes:", error.message);
+            } else if (data) {
+                const formattedAgents = data.map((item) => ({
+                    ...(item.data as AgentData),
+                    id: item.id,
+                }));
+                setAgents(formattedAgents);
+            }
+        }
+
+        fetchAgents();
+    }, []);
+
+    useEffect(() => {
+        const channel = supabase
+            .channel("agents-channel")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "agents" },
+                (payload) => {
+                    if (payload.eventType === "INSERT") {
+                        const newAgent = {
+                            ...(payload.new.data as AgentData),
+                            id: payload.new.id,
+                        };
+                        setAgents((prev) => {
+                            if (prev.some((agent) => agent.id === newAgent.id)) return prev;
+                            return [...prev, newAgent];
+                        });
+                    }
+                    if (payload.eventType === "UPDATE") {
+                        const updatedAgent = {
+                            ...(payload.new.data as AgentData),
+                            id: payload.new.id,
+                            lastModified: payload.new.lastModified,
+                        };
+                        setAgents((prev) =>
+                            prev.map((agent) =>
+                                agent.id === updatedAgent.id ? updatedAgent : agent
+                            )
+                        );
+                    }
+                    if (payload.eventType === "DELETE") {
+                        setAgents((prev) =>
+                            prev.filter((agent) => agent.id !== payload.old.id)
+                        );
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
+    const handleDeleteAgent = useCallback(async (id: number) => {
+        if (
+            window.confirm(
+                "Tem certeza que deseja apagar este agente? Esta ação não pode ser desfeita."
+            )
+        ) {
+            const { error } = await supabase.from("agents").delete().eq("id", id);
+            if (error) {
+                console.error(`Erro ao apagar agente ${id}:`, error);
+                addLiveToast({
+                    type: "failure",
+                    title: "Erro de Rede",
+                    message: "Não foi possível apagar o agente.",
+                });
+            } else {
+                setAgents((prev) => prev.filter((agent) => agent.id !== id));
+            }
+        }
+    }, [addLiveToast]);
 
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'Data desconhecida';
@@ -24,39 +121,29 @@ export const AgentListPage: React.FC<AgentListPageProps> = ({ agents, onSelect, 
     };
     
     return (
-        <div className="agent-list-container">
-            <div className="agent-list-header">
-                <h2>Selecione um Agente</h2>
-                <button onClick={onAdd} className="add-agent-btn">
-                    + Novo Agente
-                </button>
+        <div className="agent-list-page">
+            <div className="page-header">
+                <h1>Selecione um Agente</h1>
+                <button className="button-primary" onClick={onAdd}>+ Novo Agente</button>
             </div>
             {agents.length > 0 ? (
                 <div className="agent-grid">
                     {agents.map((agent) => (
-                        <div key={agent.id} className="agent-card">
-                            <div className="agent-card-avatar" style={{ backgroundImage: `url(${agent.character.avatarUrl || ''})` }}></div>
-                            <div className="agent-card-info">
-                                <h3>{agent.character.name}</h3>
-                                <p>{agent.character.pathway || 'Caminho não definido'} - Sequência {agent.character.sequence}</p>
-                                <p className="agent-card-date">Última modificação: {formatDate(agent.lastModified)}</p>
-                            </div>
-                            <div className="agent-card-actions">
-                                <div className="settings-wrapper">
-                                     <button className="settings-btn" onClick={() => setDeletingAgentId(deletingAgentId === agent.id ? null : agent.id)}>
-                                        <SettingsIcon />
-                                    </button>
-                                     {deletingAgentId === agent.id && (
-                                        <button className="delete-btn-popup" onClick={(e) => { e.stopPropagation(); onDelete(agent.id!); }}>
-                                            Apagar
-                                        </button>
-                                    )}
-                                </div>
-                                <button className="access-sheet-btn" onClick={() => onSelect(agent.id!)}>
-                                    Acessar Ficha
-                                </button>
-                            </div>
-                        </div>
+                        <CharacterCard
+                            key={agent.id}
+                            avatarUrl={agent.character.avatarUrl}
+                            name={agent.character.name}
+                            path={`${agent.character.pathway || 'Caminho não definido'} - Sequência ${agent.character.sequence}`}
+                            createdAt={agent.lastModified}
+                            customization={agent.customization}
+                            sanity={agent.character.sanity}
+                            maxSanity={agent.character.maxSanity}
+                            vitality={agent.character.vitality}
+                            maxVitality={agent.character.maxVitality}
+                            onOpen={() => navigate(`/agent/${agent.id}`)}
+                            onEdit={() => setDeletingAgentId(deletingAgentId === agent.id ? null : agent.id)}
+                            onRemove={() => handleDeleteAgent(agent.id!)}
+                        />
                     ))}
                 </div>
             ) : (

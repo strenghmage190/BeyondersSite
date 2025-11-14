@@ -11,6 +11,7 @@ interface PaTrackerProps {
 }
 
 export const PaTracker: React.FC<PaTrackerProps> = ({ agent, onUpdate, onOpenImprovements, addLiveToast }) => {
+    if (!agent || !agent.character) return null;
     const { character } = agent;
     const { paDisponivel, paTotalGasto, sequence, purifiedDiceThisSequence, assimilationDice } = character;
 

@@ -9,7 +9,9 @@
 
 /* 3. Importa os estilos de componentes reutilizáveis */
 @import url('./components/_buttons.css');
+@import url('./components/_campaign-cards.css');
 @import url('./components/_inputs.css');
+@import url('./components/_mini-sheet.css');
 @import url('./components/_modals.css');
 @import url('./components/_tabs.css');
 @import url('./components/_toasts.css');
@@ -29,4 +31,308 @@ body {
     color: var(--primary-text-color);
     font-family: var(--font-body);
     line-height: 1.6;
+}
+
+/* CharacterCard styles */
+.character-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #0f0f0f;
+    border: 1px solid #222;
+    border-radius: 8px;
+    position: relative;
+}
+
+.character-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    background-color: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    flex-shrink: 0;
+}
+
+.character-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.character-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.character-name {
+    font-weight: bold;
+}
+
+.character-subtitle {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.character-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.character-btn {
+    padding: 8px 12px;
+}
+
+.character-btn-remove {
+    padding: 6px 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.character-gear {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    cursor: pointer;
+}
+
+/* --- MasterScreen Styles --- */
+
+/* Layout Geral */
+.master-screen {
+  color: #eee;
+}
+
+.ms-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #111;
+  border-bottom: 1px solid #333;
+}
+
+.ms-header-title h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.ms-header-title span {
+  font-size: 0.8rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ms-checkbox-label {
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.ms-main-layout {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  align-items: flex-start;
+}
+
+.ms-main-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ms-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ms-sidebar-widget {
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.ms-sidebar-widget h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+}
+
+/* Seleção de Participantes */
+.ms-participants-selector {
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.ms-participants-selector h4 {
+  margin: 0 0 1rem 0;
+}
+
+.ms-participants-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ms-participant-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #222;
+  padding: 0.4rem 0.8rem;
+  border-radius: 1rem;
+  border: 1px solid #444;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ms-participant-tag:has(input:checked) {
+  background-color: var(--character-color, #4a2163);
+  border-color: var(--character-color-dark, #8a2be2);
+}
+
+.ms-participant-tag input {
+  width: 14px;
+  height: 14px;
+}
+
+.ms-participants-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Grid de Mini Fichas */
+.ms-character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Rastreador de Iniciativa */
+.ms-initiative-list {
+  list-style: decimal;
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.ms-initiative-list li {
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.ms-initiative-list li.active {
+  background-color: #2a2135; /* Roxo escuro para destacar o turno ativo */
+  box-shadow: inset 3px 0 0 #8a2be2;
+}
+
+.initiative-entry {
+  display: flex;
+  justify-content: space-between;
+}
+
+.initiative-entry .name {
+  font-weight: bold;
+}
+
+.initiative-entry .value {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.ms-initiative-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Anotações do Mestre */
+.ms-notes-textarea {
+  width: 100%;
+  min-height: 200px;
+  background-color: #111;
+  color: #ddd;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+/* Dice Log Styles */
+.ms-dice-log-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ms-dice-log-entry {
+  padding: 0.75rem;
+  border-bottom: 1px solid #333;
+  background-color: #111;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.ms-dice-log-entry:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.dice-log-character {
+  font-weight: bold;
+  color: #8a2be2;
+  margin-bottom: 0.25rem;
+}
+
+.dice-log-details {
+  font-size: 0.9rem;
+  color: #ddd;
+  margin-bottom: 0.25rem;
+}
+
+.dice-log-time {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: right;
+}
+
+/* Estados Vazios */
+.ms-empty-state {
+  color: #888;
+  padding: 2rem;
+  text-align: center;
+  border: 2px dashed #333;
+  border-radius: 8px;
+}
+.ms-empty-state.small {
+  padding: 1rem;
+  font-size: 0.9rem;
 }

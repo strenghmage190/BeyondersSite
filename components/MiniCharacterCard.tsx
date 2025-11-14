@@ -24,10 +24,10 @@ const barColors = {
 };
 
 const MiniCharacterCard: React.FC<Props> = ({ agent, onOpen, className, combatSummary, onUpdateAgent }) => {
-  const character = (agent as any).character || {};
-  const attributes: Partial<Attributes> = (agent as any).attributes || {};
+  const character = (agent as any).data?.character || {};
+  const attributes: Partial<Attributes> = (agent as any).data?.attributes || {};
 
-  const avatar = character?.avatarUrl || character?.player || 'https://via.placeholder.com/72x72?text=Avatar';
+  const avatar = character?.avatarUrl || character?.player || 'https://placehold.co/72x72?text=Avatar';
   const name = character?.name || 'Sem Nome';
   const path = character?.pathway || character?.player || 'Sem Caminho';
   const nex = (agent as any).nexPercent ?? 0;

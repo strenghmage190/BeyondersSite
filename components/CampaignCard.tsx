@@ -1,0 +1,78 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Campaign } from '../types'; // Importe seu tipo de campanha
+import { supabase } from '../supabaseClient';
+
+interface Props {
+  campaign: Campaign;
+  isPlayer: boolean; // Para saber se é uma campanha de jogador
+  agentId?: string | null;
+  onLinkCharacter?: (id: string) => void;
+}
+
+const CampaignCard: React.FC<Props> = ({ campaign, isPlayer, agentId, onLinkCharacter }) => {
+  const navigate = useNavigate();
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const coverPath = campaign.cover_image_url;
+
+    if (coverPath && !coverPath.startsWith('http')) {
+      // É um path, precisamos gerar uma URL assinada
+      supabase.storage.from('campaign-covers').createSignedUrl(coverPath, 3600) // 1 hora de validade
+        .then(({ data, error }) => {
+          if (data) {
+            setCoverImageUrl(data.signedUrl);
+          }
+        });
+    } else {
+      // Já é uma URL completa ou está vazio
+      setCoverImageUrl(coverPath || null);
+    }
+  }, [campaign.cover_image_url]);
+
+  const handleOpenClick = () => {
+    navigate(`/campaign/${campaign.id}`);
+  };
+
+  const handleOpenCharacter = () => {
+    if (agentId) {
+      navigate(`/campaign/${campaign.id}/agent/${agentId}`);
+    }
+  };
+
+  return (
+    <div className="campaign-card">
+      <div className="campaign-card-cover">
+        {coverImageUrl ? (
+          <img src={coverImageUrl} alt={`Capa de ${campaign.name}`} />
+        ) : (
+          <div className="cover-placeholder"></div>
+        )}
+      </div>
+      <div className="campaign-card-content">
+        <h3>{campaign.name}</h3>
+        <p>{campaign.description || 'Nenhuma descrição fornecida.'}</p>
+      </div>
+      <div className="campaign-card-actions">
+        {isPlayer ? (
+          agentId ? (
+            <button className="button-primary" onClick={handleOpenCharacter}>
+              Abrir Ficha
+            </button>
+          ) : (
+            <button className="button-primary" onClick={() => onLinkCharacter && onLinkCharacter(campaign.id)}>
+              Vincular Personagem
+            </button>
+          )
+        ) : (
+          <button className="button-primary" onClick={handleOpenClick}>
+            Abrir
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CampaignCard;
